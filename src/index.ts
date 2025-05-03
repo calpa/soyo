@@ -78,18 +78,18 @@ app.get("/admin/urls", async (c) => {
 
   try {
     const result = await c.env.soyo_kv_store.list();
-    const entries: Record<string, any> = {};
-    for (const { name } of result.keys) {
-      const value = await c.env.soyo_kv_store.get(name);
-      const url = name.split(KV_PREFIX)[1];
-      let parsed: any;
-      try {
-        parsed = JSON.parse(value ?? "");
-      } catch {
-        parsed = value;
-      }
-      entries[url] = parsed;
-    }
+    const entries: Record<string, unknown> = {};
+    await Promise.all(
+      result.keys.map(async ({ name }) => {
+        const value = await c.env.soyo_kv_store.get(name);
+        const url = name.slice(KV_PREFIX.length);
+        try {
+          entries[url] = JSON.parse(value ?? "");
+        } catch {
+          entries[url] = value;
+        }
+      })
+    );
     return c.json({ success: true, data: entries });
   } catch (err: any) {
     return c.json({ error: err.message }, 500);
@@ -104,27 +104,47 @@ app.get("/admin/urls", async (c) => {
 app.post("/admin/urls", async (c) => {
   const auth = c.req.header(ADMIN_HEADER) ?? "";
   const token = auth.replace(ADMIN_TOKEN_HEADER_PREFIX, "");
-  if (token !== c.env.ADMIN_TOKEN) return c.json({ error: ADMIN_TOKEN_ERROR }, 401);
+  if (token !== c.env.ADMIN_TOKEN) {
+    console.warn("Unauthorized admin access attempt");
+    return c.json({ error: ADMIN_TOKEN_ERROR }, 401);
+  }
 
-  const body = await c.req.json();
+  let body: unknown;
+  try {
+    body = await c.req.json();
+    console.log("Received body for /admin/urls POST:", body);
+  } catch (err) {
+    console.error("Failed to parse JSON body:", err);
+    return c.json({ error: "Invalid JSON" }, 400);
+  }
+
   const schema = z.object({ urls: z.array(z.string().url()) });
 
   try {
     const { urls } = schema.parse(body);
+    console.log(`Validated URLs: ${urls.join(", ")}`);
     let saved = 0;
-    for (const url of urls) {
-      const key = `${KV_PREFIX}${url}`;
-      const existing = await c.env.soyo_kv_store.get(key);
-      if (existing === null) {
-        await c.env.soyo_kv_store.put(key, "0");
-        saved++;
-      }
-    }
+    await Promise.all(
+      urls.map(async (url) => {
+        const key = `${KV_PREFIX}${url}`;
+        const existing = await c.env.soyo_kv_store.get(key);
+        if (existing === null) {
+          await c.env.soyo_kv_store.put(key, "0");
+          saved++;
+          console.log(`Saved new URL to KV: ${url}`);
+        } else {
+          console.log(`URL already exists in KV: ${url}`);
+        }
+      })
+    );
+    console.info(`Processed ${urls.length} URLs, saved ${saved}`);
     return c.json({ success: true, saved, total: urls.length });
   } catch (err: any) {
     if (err instanceof z.ZodError) {
+      console.warn("Validation failed for /admin/urls POST:", err.issues);
       return c.json({ error: "Validation failed", issues: err.issues }, 422);
     }
+    console.error("Error in /admin/urls POST:", err);
     return c.json({ error: err.message }, 500);
   }
 });
