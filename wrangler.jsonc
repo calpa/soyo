@@ -1,0 +1,57 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "soyo",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-05-03",
+  "queues":{
+    "consumers": [
+      {
+        "queue": "soyo-share-count",
+      }
+    ],
+    "producers": [
+      {
+        "queue": "soyo-share-count",
+        "binding": "soyo_queue"
+      }
+    ]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "soyo_kv_store",
+      "id": "fb4e7af3a35e4011a075156fc710319c"
+    }
+  ]
+  // "compatibility_flags": [
+  //   "nodejs_compat"
+  // ],
+  // "vars": {
+  //   "MY_VAR": "my-variable"
+  // },
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "MY_KV_NAMESPACE",
+  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  //   }
+  // ],
+  // "r2_buckets": [
+  //   {
+  //     "binding": "MY_BUCKET",
+  //     "bucket_name": "my-bucket"
+  //   }
+  // ],
+  // "d1_databases": [
+  //   {
+  //     "binding": "MY_DB",
+  //     "database_name": "my-database",
+  //     "database_id": ""
+  //   }
+  // ],
+  // "ai": {
+  //   "binding": "AI"
+  // },
+  // "observability": {
+  //   "enabled": true,
+  //   "head_sampling_rate": 1
+  // }
+}
