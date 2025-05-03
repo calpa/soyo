@@ -7,17 +7,7 @@
 
 > 🍹 **soyo** — A fast, serverless API for fetching and caching social share counts using [ShareThis](https://sharethis.com/), Cloudflare Workers, Hono, and KV storage. Includes scheduled updates, admin endpoints, and queue processing for scalable analytics.
 
----
-
 ## 🚀 Features
-
----
-
-## ⚡ Powered by ShareThis
-
-This project uses [ShareThis](https://sharethis.com/) as its primary data provider for social share counts. ShareThis is a leading platform for social sharing and analytics. For more information, see the [ShareThis Social Share Count API documentation](https://sharethis.com/support/customization/social-share-count-api/).
-
----
 
 - Fetch real-time social share counts for any URL via ShareThis
 - 📊 **Data source:** [ShareThis Social Share Count API](https://sharethis.com/support/customization/social-share-count-api/)
@@ -27,6 +17,10 @@ This project uses [ShareThis](https://sharethis.com/) as its primary data provid
 - Scheduled cron jobs to refresh share counts
 - Queue-based updates for scalability
 - TypeScript + Zod for type safety and validation
+
+### ⚡ Powered by ShareThis
+
+This project uses [ShareThis](https://sharethis.com/) as its primary data provider for social share counts. ShareThis is a leading platform for social sharing and analytics. For more information, see the [ShareThis Social Share Count API documentation](https://sharethis.com/support/customization/social-share-count-api/).
 
 ## 🛣️ API Endpoints
 
