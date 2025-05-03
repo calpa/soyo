@@ -38,6 +38,7 @@ This project uses [ShareThis](https://sharethis.com/) as its primary data provid
 - `GET /admin/urls` — List all cached URLs and their share counts
 - `POST /admin/urls` — Add new URLs to be tracked
 - `DELETE /admin/urls` — Remove URLs from tracking
+- `POST /admin/update-all` — Manually update share counts for all cached URLs
 
 > **Note:** Admin endpoints require an `Authorization: Bearer <ADMIN_TOKEN>` header.
 
@@ -82,8 +83,8 @@ curl 'https://<your-worker-url>/share-count?url=https://example.com'
 ```
 
 ## ⏰ Scheduled Tasks & Queues
-- **Cron:** Refreshes share counts every hour (`0 * * * *`)
-- **Queue:** Handles batch updates for URLs
+- **Cron:** Refreshes share counts every hour (`0 * * * *`) via the `scheduled` handler
+- **Queue:** Handles batch updates for URLs via the `queue` handler (internal, not exposed as HTTP endpoints)
 
 ## 📁 Project Structure
 
