@@ -74,7 +74,8 @@ app.get("/cached-share-count", async (c) => {
 app.get("/admin/urls", async (c) => {
   const auth = c.req.header(ADMIN_HEADER) ?? "";
   const token = auth.replace(ADMIN_TOKEN_HEADER_PREFIX, "");
-  if (token !== c.env.ADMIN_TOKEN) return c.json({ error: ADMIN_TOKEN_ERROR }, 401);
+  if (token !== c.env.ADMIN_TOKEN)
+    return c.json({ error: ADMIN_TOKEN_ERROR }, 401);
 
   try {
     const result = await c.env.soyo_kv_store.list();
@@ -83,14 +84,20 @@ app.get("/admin/urls", async (c) => {
       result.keys.map(async ({ name }) => {
         const value = await c.env.soyo_kv_store.get(name);
         const url = name.slice(KV_PREFIX.length);
-        try {
-          entries[url] = JSON.parse(value ?? "");
-        } catch {
-          entries[url] = value;
+        if (value && value !== "0") {
+          entries[url] = Number(value);
         }
       })
     );
-    return c.json({ success: true, data: entries });
+    const values = Object.values(entries);
+    return c.json({
+      success: true,
+      data: {
+        articles: values.length,
+        totalCount: values.reduce((acc, val) => Number(acc) + Number(val), 0),
+        entries,
+      },
+    });
   } catch (err: any) {
     return c.json({ error: err.message }, 500);
   }
@@ -160,13 +167,55 @@ async function messageHandler(
     const body = UpdateTaskSchema.parse(message.body);
     if (body.task === TASK_UPDATE_SHARE_COUNT) {
       const count = await fetchShareThisCounts(body.url);
-      await env.soyo_kv_store.put(`${KV_PREFIX}${body.url}`, String(count.total));
+      await env.soyo_kv_store.put(
+        `${KV_PREFIX}${body.url}`,
+        String(count.total)
+      );
     }
     message.ack();
   } catch (e) {
     console.error(e);
   }
 }
+
+async function updateAll(env: CloudflareBindings) {
+  // Retrieve all keys with the specified prefix from the KV store
+  const result = await env.soyo_kv_store.list({ prefix: KV_PREFIX });
+
+  // Construct messages for each URL to update share counts
+  const messages = result.keys.map((key) => {
+    const url = key.name.split(KV_PREFIX)[1];
+    return { body: { task: TASK_UPDATE_SHARE_COUNT, url } };
+  });
+
+  // Send messages in batches of 100
+  for (let i = 0; i < messages.length; i += 100) {
+    const batch = messages.slice(i, i + 100);
+    await env.soyo_queue.sendBatch(batch);
+  }
+
+  console.log(`All tasks have been sent`);
+}
+
+/**
+ * POST /admin/update-all
+ * Manually update share counts for all cached URLs.
+ * Requires an admin token in the Authorization header.
+ */
+app.post("/admin/update-all", async (c) => {
+  const auth = c.req.header(ADMIN_HEADER) ?? "";
+  const token = auth.replace(ADMIN_TOKEN_HEADER_PREFIX, "");
+  if (token !== c.env.ADMIN_TOKEN)
+    return c.json({ error: ADMIN_TOKEN_ERROR }, 401);
+
+  try {
+    await updateAll(c.env);
+    return c.json({ success: true });
+  } catch (err: any) {
+    console.error("Error in /admin/update-all POST:", err);
+    return c.json({ error: err.message }, 500);
+  }
+});
 
 /**
  * Cloudflare Worker export handler including fetch and queue event handlers.
@@ -179,12 +228,7 @@ const exportHandler: ExportedHandler<CloudflareBindings> = {
     }
   },
   async scheduled(controller, env, ctx) {
-    const result = await env.soyo_kv_store.list({ prefix: KV_PREFIX });
-    for (const key of result.keys) {
-      const url = key.name.split(KV_PREFIX)[1];
-      const count = await fetchShareThisCounts(url);
-      await env.soyo_kv_store.put(key.name, String(count.total));
-    }
+    await updateAll(env);
   },
 };
 

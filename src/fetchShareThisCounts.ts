@@ -34,7 +34,7 @@ const ShareSchema = z.object({
  * Zod schema for ShareThis counts response.
  */
 const ShareThisCountsSchema = z.object({
-  clicks: ShareSchema,
+  clicks: ShareSchema.optional(),
   total: z.number(),
   shares: ShareSchema.optional(),
   ourl: z.string().url(),
@@ -51,7 +51,7 @@ type ShareThisCounts = z.infer<typeof ShareThisCountsSchema>;
 export async function fetchShareThisCounts(
   url: string
 ): Promise<ShareThisCounts> {
-  console.log(url);
+  console.log(`Handling for url: ${url}`);
   const endpoint = `https://count-server.sharethis.com/v2.0/get_counts?url=${encodeURIComponent(
     url
   )}`;
@@ -59,6 +59,9 @@ export async function fetchShareThisCounts(
   if (!res.ok) throw new Error("Failed to fetch ShareThis counts");
   const data = await res.json();
 
-  console.log(data);
-  return ShareThisCountsSchema.parse(data);
+  const parsedResult =  ShareThisCountsSchema.parse(data);
+
+  console.log(`Result for url ${url}: ${parsedResult.total}`);
+
+  return parsedResult;
 }
