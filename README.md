@@ -5,13 +5,22 @@
 [![Hono](https://img.shields.io/badge/Hono-4.x-green?logo=hono)](https://hono.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> 🍹 **soyo** — A fast, serverless API for fetching and caching social share counts using Cloudflare Workers, Hono, and KV storage. Includes scheduled updates, admin endpoints, and queue processing for scalable analytics.
+> 🍹 **soyo** — A fast, serverless API for fetching and caching social share counts using [ShareThis](https://sharethis.com/), Cloudflare Workers, Hono, and KV storage. Includes scheduled updates, admin endpoints, and queue processing for scalable analytics.
 
 ---
 
 ## 🚀 Features
 
+---
+
+## ⚡ Powered by ShareThis
+
+This project uses [ShareThis](https://sharethis.com/) as its primary data provider for social share counts. ShareThis is a leading platform for social sharing and analytics. For more information, see the [ShareThis Social Share Count API documentation](https://sharethis.com/support/customization/social-share-count-api/).
+
+---
+
 - Fetch real-time social share counts for any URL via ShareThis
+- 📊 **Data source:** [ShareThis Social Share Count API](https://sharethis.com/support/customization/social-share-count-api/)
 - Cache share counts in Cloudflare KV for fast retrieval
 - Admin endpoints to manage and list cached URLs
 - Serverless architecture with Cloudflare Workers & Hono
@@ -20,6 +29,9 @@
 - TypeScript + Zod for type safety and validation
 
 ## 🛣️ API Endpoints
+
+> ℹ️ **Note:** All share count data is sourced from [ShareThis](https://sharethis.com/support/customization/social-share-count-api/).
+
 
 ### Health Check
 - `GET /` — Returns `Hello World` for health check
