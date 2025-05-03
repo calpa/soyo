@@ -75,29 +75,92 @@ app.get('/cached-share-count', async (c) => {
 });
 
 /**
- * GET /jobs
- * Enqueues batch jobs for updating share counts.
- * @route GET /jobs
- * @returns {object} 200 - Success and number of jobs enqueued.
+ * GET /admin/kv-entries
+ * Returns all key-value entries from the KV store as JSON.
+ * Requires an admin token in the X-TOKEN header for authorization.
+ * 
+ * @route GET /admin/kv-entries
+ * @header {string} X-TOKEN - Admin token for authentication.
+ * @returns {object} 200 - KV entries as JSON.
+ * @returns {object} 401 - Unauthorized if token is missing or invalid.
+ * @returns {object} 500 - Unexpected error.
  */
-app.get("/jobs", async (c) => {
-  const urls = ["https://calpa.me/blog/vitest-modern-testing-framework/"];
+app.get("/admin/urls", async (c) => {
+  const auth = c.req.header("Authorization") ?? "";
+  const token = auth.replace("Bearer ", "");
 
-  const messages = urls.map((url) => ({
-    body: {
-      task: "UPDATE_SHARE_COUNT",
-      url,
-    },
-  }));
+  if (token !== c.env.ADMIN_TOKEN) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
 
-  await c.env.soyo_queue.sendBatch(messages);
+  try {
+    const result = await c.env.soyo_kv_store.list();
+    const entries: Record<string, any> = {};
 
-  return c.json({
-    success: true,
-    data: {
-      jobs: messages.length,
-    },
-  });
+    for (const { name } of result.keys) {
+      const value = await c.env.soyo_kv_store.get(name);
+
+      const url = name.split('share-count:')[1];
+
+      let parsed: any;
+      try {
+        parsed = JSON.parse(value ?? "");
+      } catch {
+        parsed = value;
+      }
+      entries[url] = parsed;
+    }
+
+    return c.json({ success: true, data: entries });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+/**
+ * POST /admin/save-urls
+ * Saves a list of URLs to the KV store if not already present.
+ * Requires an admin token in the X-TOKEN header for authorization.
+ * 
+ * @route POST /admin/save-urls
+ * @header {string} X-TOKEN - Admin token for authentication.
+ * @body {object} urls - Array of valid URLs to be saved.
+ * @returns {object} 200 - Success response with count of saved URLs.
+ * @returns {object} 401 - Unauthorized if token is missing or invalid.
+ * @returns {object} 422 - Validation failed.
+ * @returns {object} 500 - Unexpected error.
+ */
+app.post("/admin/urls", async (c) => {
+  const auth = c.req.header("Authorization") ?? "";
+  const token = auth.replace("Bearer ", "");
+
+  if (token !== c.env.ADMIN_TOKEN) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const body = await c.req.json();
+  const schema = z.object({ urls: z.array(z.string().url()) });
+
+  try {
+    const { urls } = schema.parse(body);
+
+    let saved = 0;
+    for (const url of urls) {
+      const key = `share-count:${url}`;
+      const existing = await c.env.soyo_kv_store.get(key);
+      if (existing === null) {
+        await c.env.soyo_kv_store.put(key, "0");
+        saved++;
+      }
+    }
+
+    return c.json({ success: true, saved, total: urls.length });
+  } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return c.json({ error: "Validation failed", issues: err.issues }, 422);
+    }
+    return c.json({ error: err.message }, 500);
+  }
 });
 
 /**
@@ -138,6 +201,22 @@ const exportHandler: ExportedHandler<CloudflareBindings> = {
   async queue(batch, env, ctx) {
     for await (const message of batch.messages) {
       await messageHandler(message, env);
+    }
+  },
+  /**
+   * Scheduled handler runs every hour to update share counts.
+   * @param {ScheduledController} controller
+   * @param {CloudflareBindings} env
+   * @param {ExecutionContext} ctx
+   */
+  async scheduled(controller, env, ctx) {
+    const result = await env.soyo_kv_store.list({
+      prefix: 'share-count:'
+    });
+    for (const key of result.keys) {
+      const url = key.name.split('share-count:')[1];
+      const count = await fetchShareThisCounts(url);
+      await env.soyo_kv_store.put(key.name, String(count.total));
     }
   },
 };

@@ -21,7 +21,10 @@
       "binding": "soyo_kv_store",
       "id": "fb4e7af3a35e4011a075156fc710319c"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": ["0 * * * *"]
+  }
   // "compatibility_flags": [
   //   "nodejs_compat"
   // ],

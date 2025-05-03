@@ -1,30 +1,42 @@
 import { z } from "zod";
 
+const ShareSchema = z.object({
+  all: z.number().optional(),
+  email: z.number().optional(),
+  facebook: z.number().optional(),
+  instapaper: z.number().optional(),
+  mail_ru: z.number().optional(),
+  pinterest: z.number().optional(),
+  print: z.number().optional(),
+  twitter: z.number().optional(),
+  whatsapp: z.number().optional(),
+  xing: z.number().optional(),
+  linkedin: z.number().optional(),
+  reddit: z.number().optional(),
+  telegram: z.number().optional(),
+  tumblr: z.number().optional(),
+  vk: z.number().optional(),
+  wechat: z.number().optional(),
+  buffer: z.number().optional(),
+  messenger: z.number().optional(),
+  line: z.number().optional(),
+  pocket: z.number().optional(),
+  sms: z.number().optional(),
+  hackernews: z.number().optional(),
+  blogger: z.number().optional(),
+  delicious: z.number().optional(),
+  digg: z.number().optional(),
+  stumbleupon: z.number().optional(),
+  googlebookmarks: z.number().optional(),
+})
+
 /**
  * Zod schema for ShareThis counts response.
  */
 const ShareThisCountsSchema = z.object({
-  clicks: z.object({
-    all: z.number(),
-    facebook: z.number().optional(),
-    github: z.number().optional(),
-    twitter: z.number().optional(),
-  }),
+  clicks: ShareSchema,
   total: z.number(),
-  shares: z
-    .object({
-      all: z.number(),
-      email: z.number(),
-      facebook: z.number(),
-      instapaper: z.number(),
-      mail_ru: z.number(),
-      pinterest: z.number(),
-      print: z.number(),
-      twitter: z.number(),
-      whatsapp: z.number(),
-      xing: z.number(),
-    })
-    .optional(),
+  shares: ShareSchema.optional(),
   ourl: z.string().url(),
 });
 
@@ -39,6 +51,7 @@ type ShareThisCounts = z.infer<typeof ShareThisCountsSchema>;
 export async function fetchShareThisCounts(
   url: string
 ): Promise<ShareThisCounts> {
+  console.log(url);
   const endpoint = `https://count-server.sharethis.com/v2.0/get_counts?url=${encodeURIComponent(
     url
   )}`;
