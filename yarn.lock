@@ -960,10 +960,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hono@npm:^4.7.8":
-  version: 4.7.8
-  resolution: "hono@npm:4.7.8"
-  checksum: 10c0/38dd83abe5a0908a033e087e88fac2ca8ba288a4b323f92787b6213e82d8ce69d12ae1b9596afeb0c947a0c09fa1af7ea2bf3b1d20e546a0f6d64cb88984492f
+"hono@npm:^4.10.3":
+  version: 4.10.3
+  resolution: "hono@npm:4.10.3"
+  checksum: 10c0/bdcc4c7066c74ba7cfa63ed6550768a0f43a420286c8f8f74b7012ea4901b8b06778fa8e98264b46f1a86920f056b7ede1f07814da4934912f9945def4977c29
   languageName: node
   linkType: hard
 
@@ -1518,7 +1518,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "soyo@workspace:."
   dependencies:
-    hono: "npm:^4.7.8"
+    hono: "npm:^4.10.3"
     wrangler: "npm:^4.4.0"
     zod: "npm:^3.24.3"
   languageName: unknown
